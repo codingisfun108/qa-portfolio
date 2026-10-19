@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+.vercel/
+.env*.local
+.env
+# Local content store used when Redis isn't configured (dev and tests)
+.data/
+.data-test/
+public/uploads/
+test-results/
+playwright-report/
+blob-report/
+next-env.d.ts
+*.tsbuildinfo
+.DS_Store
