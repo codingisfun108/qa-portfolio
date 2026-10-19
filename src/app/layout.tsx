@@ -1,6 +1,7 @@
+
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
-import { Analytics } from '@vercel/analytics/next';
+import SiteAnalytics from '@/components/SiteAnalytics';
 import { getContent } from '@/lib/store';
 import './globals.css';
 
@@ -54,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         {/* Vercel Web Analytics only exists on Vercel deployments. */}
-        {process.env.VERCEL && <Analytics />}
+        {process.env.VERCEL && <SiteAnalytics />}
       </body>
     </html>
   );
