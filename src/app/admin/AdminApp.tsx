@@ -702,8 +702,8 @@ function Settings({
       </Card>
       <Card title="Security">
         <p className="adm-muted">
-          To change your password, run <code>npm run hash-password</code>, paste the new value into <code>ADMIN_PASSWORD_HASH</code> in Vercel and redeploy. Every
-          existing session ends automatically.
+          To change your password, sign out and use <strong>Forgot password?</strong> on the sign-in page (needs <code>RESEND_API_KEY</code>), or run{' '}
+          <code>npm run hash-password</code>, paste the new value into <code>ADMIN_PASSWORD_HASH</code> in Vercel and redeploy. Either way, every existing session ends.
         </p>
         <button className="adm-btn ghost" type="button" onClick={onLogoutEverywhere}>
           Sign out on all devices

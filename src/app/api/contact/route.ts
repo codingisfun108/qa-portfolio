@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clientIp, isSameOrigin } from '@/lib/auth';
+import { sendEmail } from '@/lib/email';
 import { rateLimit } from '@/lib/ratelimit';
 import { messageSchema } from '@/lib/schema';
 import { addMessage, getContent } from '@/lib/store';
@@ -7,20 +8,14 @@ import { addMessage, getContent } from '@/lib/store';
 // Optional email alert for new messages through Resend (free tier). Set RESEND_API_KEY and
 // NOTIFY_EMAIL in Vercel to turn it on; messages are saved to the admin inbox either way.
 async function notify(m: { name: string; email: string; company: string; message: string }) {
-  const key = process.env.RESEND_API_KEY;
   const to = process.env.NOTIFY_EMAIL;
-  if (!key || !to) return;
+  if (!process.env.RESEND_API_KEY || !to) return;
   try {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: process.env.NOTIFY_FROM || 'Portfolio <onboarding@resend.dev>',
-        to: [to],
-        reply_to: m.email,
-        subject: `Portfolio message from ${m.name}`,
-        text: `${m.name} <${m.email}>${m.company ? ` (${m.company})` : ''}\n\n${m.message}`,
-      }),
+    await sendEmail({
+      to,
+      replyTo: m.email,
+      subject: `Portfolio message from ${m.name}`,
+      text: `${m.name} <${m.email}>${m.company ? ` (${m.company})` : ''}\n\n${m.message}`,
     });
   } catch (err) {
     console.error('Email alert failed', err);

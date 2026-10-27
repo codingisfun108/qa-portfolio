@@ -18,7 +18,7 @@ export function getAdminConfig(): AdminConfig | null {
 }
 
 /** Changes whenever the password hash changes, so a new password ends every old session. */
-function passwordVersion(hash: string) {
+export function passwordVersion(hash: string) {
   return createHash('sha256').update(hash).digest('base64url').slice(0, 12);
 }
 

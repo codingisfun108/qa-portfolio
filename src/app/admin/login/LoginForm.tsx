@@ -48,6 +48,9 @@ export function LoginForm({ next }: { next: string }) {
       <button className="adm-btn primary wide" type="submit" disabled={busy || !ready}>
         {busy ? 'Signing in…' : 'Sign in'}
       </button>
+      <p className="adm-muted adm-small">
+        <a href="/admin/forgot-password">Forgot password?</a>
+      </p>
     </form>
   );
 }

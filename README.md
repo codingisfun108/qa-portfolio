@@ -65,7 +65,11 @@ The Hobby plan is for personal, non-commercial projects, which covers a portfoli
 
 ## Change your password
 
-Run `npm run hash-password` again, replace `ADMIN_PASSWORD_HASH` in Vercel and redeploy. Every existing session ends automatically.
+**Forgot it?** Click **Forgot password?** on the sign-in page and enter the admin email (`ADMIN_EMAIL`). A 6-digit code is emailed to that address. Enter it with a new password (12+ characters). The code expires after 10 minutes and stops working after 5 wrong tries. This needs Redis storage and `RESEND_API_KEY` in Vercel. With Resend's shared `onboarding@resend.dev` sender, Resend only delivers to the email your Resend account uses, so either make that your `ADMIN_EMAIL` or verify your own domain and set `NOTIFY_FROM`.
+
+**From the terminal:** run `npm run hash-password` again, replace `ADMIN_PASSWORD_HASH` in Vercel and redeploy. A new hash in Vercel always replaces a password set through the reset page.
+
+Either way, every existing session ends automatically. Locally (no `RESEND_API_KEY`), reset emails are saved to `.data/outbox/` instead of being sent.
 
 ## Run locally
 

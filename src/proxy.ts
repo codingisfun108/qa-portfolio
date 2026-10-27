@@ -4,7 +4,13 @@ import { SESSION_COOKIE, verifySessionToken } from './lib/session';
 // First gate for the admin area: no valid session, no admin pages or admin APIs.
 // Route handlers check the session again (see lib/auth.ts) before reading or writing anything.
 
-const PUBLIC_ADMIN_PATHS = new Set(['/admin/login', '/api/admin/login']);
+const PUBLIC_ADMIN_PATHS = new Set([
+  '/admin/login',
+  '/api/admin/login',
+  '/admin/forgot-password',
+  '/api/admin/password-reset/request',
+  '/api/admin/password-reset/verify',
+]);
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

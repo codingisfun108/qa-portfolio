@@ -15,6 +15,8 @@ import { contentSchema, normalizeSections, type Content, type Message } from './
 const KEY_CONTENT = 'portfolio:content';
 const KEY_MESSAGES = 'portfolio:messages';
 const KEY_SESSION_EPOCH = 'portfolio:session-epoch';
+const KEY_PASSWORD = 'portfolio:admin-password';
+const KEY_PASSWORD_RESET = 'portfolio:password-reset';
 const MAX_MESSAGES = 500;
 
 export class StorageNotConfiguredError extends Error {
@@ -143,6 +145,29 @@ export async function getSessionEpoch(): Promise<number> {
 
 export async function bumpSessionEpoch() {
   await writeRaw(KEY_SESSION_EPOCH, 'session-epoch.json', Math.floor(Date.now() / 1000));
+}
+
+// Password set through "Forgot password". `base` records which ADMIN_PASSWORD_HASH it replaced,
+// so putting a new hash in Vercel still takes over (see lib/password-reset.ts).
+export type StoredPassword = { hash: string; base: string };
+
+export async function getStoredPassword(): Promise<StoredPassword | null> {
+  return readRaw<StoredPassword>(KEY_PASSWORD, 'admin-password.json');
+}
+
+export async function saveStoredPassword(value: StoredPassword) {
+  await writeRaw(KEY_PASSWORD, 'admin-password.json', value);
+}
+
+// The pending reset code (only its keyed hash), with expiry and wrong-guess count.
+export type ResetRequest = { codeHash: string; createdAt: number; expiresAt: number; attempts: number };
+
+export async function getResetRequest(): Promise<ResetRequest | null> {
+  return readRaw<ResetRequest>(KEY_PASSWORD_RESET, 'password-reset.json');
+}
+
+export async function saveResetRequest(value: ResetRequest | null) {
+  await writeRaw(KEY_PASSWORD_RESET, 'password-reset.json', value);
 }
 
 // Uploads (photo, resume, recognition images)

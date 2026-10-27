@@ -9,6 +9,8 @@ type Limit = { requests: number; windowSeconds: number };
 export const LIMITS = {
   login: { requests: 5, windowSeconds: 15 * 60 },
   contact: { requests: 3, windowSeconds: 60 * 60 },
+  resetRequest: { requests: 3, windowSeconds: 60 * 60 },
+  resetVerify: { requests: 10, windowSeconds: 15 * 60 },
 } satisfies Record<string, Limit>;
 
 const memory = new Map<string, number[]>();
