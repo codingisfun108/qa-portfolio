@@ -10,7 +10,8 @@ export async function getAdminSession() {
   const session = await verifySessionToken(token);
   if (!session) return null;
   const epoch = await getSessionEpoch();
-  if (epoch && session.iat < epoch) return null;
+  // Both are whole seconds, so a session issued in the same second as the bump is also ended.
+  if (epoch && session.iat <= epoch) return null;
   return session;
 }
 

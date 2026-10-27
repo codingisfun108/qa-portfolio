@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { clientIp, isSameOrigin } from '@/lib/auth';
 import { verifyPassword } from '@/lib/password';
+import { activePasswordHash } from '@/lib/password-reset';
 import { rateLimit } from '@/lib/ratelimit';
 import { SESSION_COOKIE, createSessionToken, getAdminConfig, sessionCookieOptions } from '@/lib/session';
 
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
   const password = parsed.success ? parsed.data.password : '';
 
   // Always run the hash so a wrong email and a wrong password take the same time.
-  const passwordOk = await verifyPassword(password, config.passwordHash);
+  const passwordOk = await verifyPassword(password, await activePasswordHash(config));
   if (!passwordOk || email !== config.email) {
     return NextResponse.json({ error: 'Email or password is incorrect.' }, { status: 401 });
   }

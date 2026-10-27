@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 import { TEST_ADMIN } from '../playwright.config';
 import { seed } from '../src/content/seed';
 
@@ -322,5 +324,69 @@ test.describe('Empty and switched-off content', () => {
     await expectNoDeadAnchors(site);
     await site.close();
     await resetContent(page);
+  });
+});
+
+test.describe('Forgot password', () => {
+  // Without RESEND_API_KEY the test server saves emails to .data-test/outbox instead of sending them.
+  const outbox = path.join('.data-test', 'outbox');
+  const emails = () => (fs.existsSync(outbox) ? fs.readdirSync(outbox).sort() : []);
+  const latestCode = () => {
+    const mail = JSON.parse(fs.readFileSync(path.join(outbox, emails().at(-1)!), 'utf8')) as { to: string; text: string };
+    expect(mail.to).toBe(TEST_ADMIN.email);
+    return mail.text.match(/Your code: (\d{6})/)![1];
+  };
+
+  async function requestCode(page: Page, email: string) {
+    await page.goto('/admin/login');
+    await page.getByRole('link', { name: 'Forgot password?' }).click();
+    await expect(page.getByRole('button', { name: 'Send code' })).toBeEnabled();
+    await page.getByLabel('Email').fill(email);
+    await page.getByRole('button', { name: 'Send code' }).click();
+    await expect(page.getByText(`If ${email} is the admin email, a 6-digit code is on its way.`)).toBeVisible();
+  }
+
+  test('an unknown email gets the same reply and no email is sent', async ({ page }) => {
+    const before = emails().length;
+    await requestCode(page, 'someone-else@test.local');
+    expect(emails().length).toBe(before);
+  });
+
+  test('the emailed code resets the password and ends old sessions', async ({ page, browser, request }) => {
+    const newPassword = 'a brand new admin password';
+    await signIn(page);
+
+    const reset = await (await browser.newContext()).newPage();
+    await requestCode(reset, TEST_ADMIN.email);
+    const code = latestCode();
+    const wrong = code === '000000' ? '111111' : '000000';
+
+    await reset.getByLabel('Code from the email').fill(wrong);
+    await reset.getByLabel('New password', { exact: true }).fill(newPassword);
+    await reset.getByLabel('Confirm new password').fill(newPassword);
+    await reset.getByRole('button', { name: 'Reset password' }).click();
+    await expect(reset.locator('form').getByRole('alert')).toHaveText('That code is incorrect or has expired. Request a new code.');
+
+    await reset.getByLabel('Code from the email').fill(code);
+    await reset.getByRole('button', { name: 'Reset password' }).click();
+    await expect(reset.getByText('Password changed. You have been signed out on every device.')).toBeVisible();
+
+    // The code works once, and the session from before the reset is gone.
+    const reuse = await request.post('/api/admin/password-reset/verify', { data: { email: TEST_ADMIN.email, code, password: newPassword } });
+    expect(reuse.status()).toBe(400);
+    expect((await page.request.get('/api/admin/content')).status()).toBe(401);
+
+    const login = (password: string) => request.post('/api/admin/login', { data: { email: TEST_ADMIN.email, password } });
+    expect((await login(TEST_ADMIN.password)).status()).toBe(401);
+    expect((await login(newPassword)).status()).toBe(200);
+
+    // Put the original password back so a retried run can still sign in.
+    expect((await request.post('/api/admin/password-reset/request', { data: { email: TEST_ADMIN.email } })).status()).toBe(200);
+    const restore = await request.post('/api/admin/password-reset/verify', {
+      data: { email: TEST_ADMIN.email, code: latestCode(), password: TEST_ADMIN.password },
+    });
+    expect(restore.status()).toBe(200);
+    expect((await login(TEST_ADMIN.password)).status()).toBe(200);
+    await reset.context().close();
   });
 });
