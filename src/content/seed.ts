@@ -29,6 +29,7 @@ export const seed: Content = {
     seoDescription:
       'QA Lead with 9+ years on SaaS web and mobile products. Test strategy, release governance, Playwright automation and AI-assisted QA.',
     siteUrl: '',
+    theme: 'light',
   },
 
   hero: {
@@ -38,8 +39,8 @@ export const seed: Content = {
       'QA Lead with 9+ years on SaaS web and mobile products in entertainment ticketing, EdTech and online examinations. I lead a 6-member QA team on the PVR INOX ticketing platform, own test strategy and release sign-off, and build AI agents into everyday QA work.',
     stats: [
       { value: '9+', label: 'years in QA' },
-      { value: '10', label: 'QA engineers led' },
-      { value: '99%+', label: 'defect-free releases' },
+      { value: '10', label: 'QA engineers led at peak' },
+      { value: '4', label: 'platforms signed off per release' },
     ],
   },
 
@@ -61,8 +62,9 @@ export const seed: Content = {
   sections: [
     { id: 'signoff', visible: true, inNav: false, navLabel: 'Sign-off', title: 'Every release I own goes through this', subtitle: 'The checks behind my go / no-go call, run before anything reaches users.' },
     { id: 'projects', visible: true, inNav: true, navLabel: 'Projects', title: "Projects I've led QA on", subtitle: 'Products where I owned quality from test planning through release sign-off.' },
+    { id: 'ai', visible: true, inNav: true, navLabel: 'AI in QA', title: 'AI agents I built into our QA process', subtitle: 'Claude agents connected to Jira through MCP, built for the PVR INOX QA team.' },
     { id: 'impact', visible: true, inNav: true, navLabel: 'Impact', title: 'Impact', subtitle: "Results from the teams and products I've led. Each figure names where it came from." },
-    { id: 'experience', visible: true, inNav: true, navLabel: 'Experience', title: 'Experience', subtitle: 'Nine years of owning the release decision, from exploratory testing on Samsung devices to leading QA for ticketing and EdTech platforms.' },
+    { id: 'experience', visible: true, inNav: true, navLabel: 'Experience', title: 'Experience', subtitle: 'From exploratory testing on Samsung devices in 2015 to leading QA for ticketing and EdTech platforms, with nine years of owning the release decision.' },
     { id: 'recognition', visible: false, inNav: false, navLabel: 'Recognition', title: 'Recognition', subtitle: 'What clients and leaders said about the work.' },
     { id: 'toolkit', visible: true, inNav: true, navLabel: 'Toolkit', title: 'My testing toolkit', subtitle: 'What I use to plan, test and sign off releases across web, Android and iOS.' },
     { id: 'certifications', visible: false, inNav: false, navLabel: 'Certifications', title: 'Certifications', subtitle: '' },
@@ -80,7 +82,7 @@ export const seed: Content = {
       status: 'Releasing soon',
       summary:
         "Movie ticket booking for India's largest multiplex chain, across Android, iOS, website and mobile site. I'm leading QA through to the upcoming release.",
-      role: 'QA Lead at Appinventiv, team of 6',
+      role: 'QA Lead, team of 6',
       tested: [
         'Showtime discovery and seat selection',
         'Payments, offers and e-tickets',
@@ -89,6 +91,9 @@ export const seed: Content = {
         'Jira defect triage and release go / no-go',
       ],
       link: '',
+      employer: 'Appinventiv',
+      period: 'Feb 2026 – Present',
+      caseStudy: '',
     },
     {
       id: 'think-exam',
@@ -106,6 +111,9 @@ export const seed: Content = {
         'Accuracy of results and reports',
       ],
       link: '',
+      employer: '',
+      period: '',
+      caseStudy: '',
     },
     {
       id: 'glorifire-lms',
@@ -117,6 +125,9 @@ export const seed: Content = {
       role: 'QA owner, LMS modules',
       tested: ['LMS modules end to end', 'Regression suite before every release', 'UAT validation with stakeholders', 'Release readiness and QA sign-off'],
       link: '',
+      employer: '',
+      period: '',
+      caseStudy: '',
     },
     {
       id: 'glorifire-stakeholder',
@@ -128,31 +139,33 @@ export const seed: Content = {
       role: 'QA',
       tested: ['Teaching tools and educator workflows', 'Analytics dashboards and data accuracy', 'Admin and user management', 'Regression across releases'],
       link: '',
-    },
-    {
-      id: 'ai-qa-agents',
-      visible: true,
-      title: 'AI QA agent toolkit',
-      domain: 'AI in QA',
-      status: 'In use',
-      summary: 'Claude agents connected to Jira through MCP that handle test design, defect logging and triage for the PVR INOX team.',
-      role: 'Designer and builder',
-      tested: [
-        'Requirements to ISTQB test plans, Xray test cases and an RTM',
-        'Structured Jira bug reports created directly through Atlassian MCP',
-        'Read-only triage reports by fix version, plus tickets ready for QA',
-      ],
-      link: '',
+      employer: '',
+      period: '',
+      caseStudy: '',
     },
   ],
 
+  // The featured AI section. Samples and the result line are blank until real, sanitized
+  // ones are added in the admin panel; blank parts are not shown.
+  ai: {
+    intro: 'I designed and built three Claude agents that handle test design, defect logging and triage.',
+    steps: [
+      { title: 'Test design', detail: 'Turns requirements into an ISTQB test plan, Xray test cases and a requirements traceability matrix.' },
+      { title: 'Defect logging', detail: 'Writes a structured bug report and creates it in Jira directly through Atlassian MCP.' },
+      { title: 'Triage', detail: 'Builds a read-only triage report by fix version, plus the list of tickets ready for QA.' },
+    ],
+    samples: [],
+    result: '',
+  },
+
+  // "note" is for the baseline, period or definition behind a figure. Blank notes are not shown.
   impact: [
-    { value: '95%', label: 'reduction in defect leakage', source: 'Edfora Infotech' },
-    { value: '85%', label: 'fewer critical production issues', source: 'Edfora Infotech' },
-    { value: '99%+', label: 'defect-free production releases', source: 'Ginger Webs, Glorifire LMS' },
-    { value: '10', label: 'QA engineers led and mentored', source: 'Edfora Infotech' },
-    { value: '40%', label: 'higher customer satisfaction', source: 'Edfora Infotech' },
-    { value: '10%', label: 'faster release cycles from QA reporting', source: 'Edfora Infotech' },
+    { value: '95%', label: 'reduction in defect leakage', source: 'Edfora Infotech, 2017–2025', note: '' },
+    { value: '85%', label: 'fewer critical production issues', source: 'Edfora Infotech, 2017–2025', note: '' },
+    { value: '99%+', label: 'defect-free production releases', source: 'Ginger Webs, Glorifire LMS', note: '' },
+    { value: '10', label: 'QA engineers led and mentored', source: 'Edfora Infotech, 2017–2025', note: '' },
+    { value: '40%', label: 'higher customer satisfaction', source: 'Edfora Infotech, 2017–2025', note: '' },
+    { value: '10%', label: 'faster release cycles from QA reporting', source: 'Edfora Infotech, 2017–2025', note: '' },
   ],
 
   experience: [
@@ -232,14 +245,16 @@ export const seed: Content = {
     { name: 'Burp Suite Pro', use: 'Security testing', tag: '' },
     { name: 'MongoDB, SQL', use: 'Data validation with Robo 3T and Studio 3T', tag: '' },
   ],
+  // Add a "detail" to each (your actual rule or routine) in the admin panel.
   practices: [
-    'Risk-based test planning',
-    'Release readiness and QA sign-off',
-    'Regression strategy',
-    'Exploratory testing',
-    'Root cause analysis',
-    'Agile and Kanban delivery',
+    { title: 'Risk-based test planning', detail: '' },
+    { title: 'Release readiness and QA sign-off', detail: '' },
+    { title: 'Regression strategy', detail: '' },
+    { title: 'Exploratory testing', detail: '' },
+    { title: 'Root cause analysis', detail: '' },
+    { title: 'Agile and Kanban delivery', detail: '' },
   ],
+  artifacts: [],
 
   certifications: [],
 

@@ -94,6 +94,7 @@ export function coerceContent(raw: unknown): Content {
     site: { ...seed.site, ...(stored.site ?? {}) },
     hero: { ...seed.hero, ...(stored.hero ?? {}) },
     signoff: { ...seed.signoff, ...(stored.signoff ?? {}) },
+    ai: { ...seed.ai, ...(stored.ai ?? {}) },
     contact: { ...seed.contact, ...(stored.contact ?? {}) },
     sections: normalizeSections((stored.sections as Content['sections']) ?? seed.sections, seed.sections),
   };

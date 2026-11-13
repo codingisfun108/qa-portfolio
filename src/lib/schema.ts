@@ -16,6 +16,7 @@ const lines = (max = 300) =>
 export const SECTION_IDS = [
   'signoff',
   'projects',
+  'ai',
   'impact',
   'experience',
   'recognition',
@@ -30,6 +31,7 @@ export type SectionId = (typeof SECTION_IDS)[number];
 export const SECTION_LABELS: Record<SectionId, string> = {
   signoff: 'Release sign-off panel',
   projects: 'Projects',
+  ai: 'AI in QA',
   impact: 'Impact numbers',
   experience: 'Experience',
   recognition: 'Recognition',
@@ -73,6 +75,8 @@ export const contentSchema = z.object({
     seoTitle: text(80),
     seoDescription: text(200),
     siteUrl: url,
+    // Colour theme of the public site. The admin panel always stays light.
+    theme: z.enum(['light', 'dark']).default('light'),
   }),
 
   hero: z.object({
@@ -103,11 +107,22 @@ export const contentSchema = z.object({
         role: text(80),
         tested: lines(160),
         link: url,
+        // Added later, so they default to blank for content saved before they existed.
+        employer: text(80).default(''),
+        period: text(60).default(''),
+        caseStudy: z.string().max(20_000).default(''),
       }),
     )
     .max(20),
 
-  impact: z.array(z.object({ value: text(12), label: text(80), source: text(80) })).max(12),
+  ai: z.object({
+    intro: text(600),
+    steps: z.array(z.object({ title: text(80), detail: text(300) })).max(6),
+    samples: z.array(z.object({ title: text(100), body: z.string().max(4000) })).max(6),
+    result: text(300),
+  }),
+
+  impact: z.array(z.object({ value: text(12), label: text(80), source: text(80), note: text(160).default('') })).max(12),
 
   experience: z
     .array(
@@ -141,7 +156,12 @@ export const contentSchema = z.object({
     .max(20),
 
   toolkit: z.array(z.object({ name: text(60).min(1), use: text(120), tag: text(30) })).max(30),
-  practices: lines(60),
+  // Was a list of plain phrases; those still load and become a title with no detail.
+  practices: z
+    .array(z.union([z.string().transform((title) => ({ title, detail: '' })), z.object({ title: text(80), detail: text(400) })]))
+    .max(30)
+    .transform((a) => a.map((p) => ({ title: p.title.trim().slice(0, 80), detail: p.detail })).filter((p) => p.title.length > 0)),
+  artifacts: z.array(z.object({ title: text(100).min(1), description: text(200), url })).max(12),
 
   certifications: z
     .array(z.object({ id, name: text(120).min(1), issuer: text(80), year: text(10), link: url }))

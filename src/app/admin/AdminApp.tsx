@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SECTION_LABELS, type Content, type Message } from '@/lib/schema';
-import { hiddenReason } from '@/lib/visibility';
+import { hiddenReason, isLive, isScheduled } from '@/lib/visibility';
 import { AreaField, Card, LinesField, ListEditor, TextField, Toggle, UploadField, newId } from './fields';
 
 type Props = {
@@ -20,6 +20,7 @@ type Tab =
   | 'sections'
   | 'signoff'
   | 'projects'
+  | 'ai'
   | 'experience'
   | 'impact'
   | 'toolkit'
@@ -29,20 +30,22 @@ type Tab =
   | 'now'
   | 'inbox'
   | 'seo'
+  | 'theme'
   | 'settings';
 
 const GROUPS: { label: string; tabs: [Tab, string][] }[] = [
-  { label: 'Content', tabs: [['profile', 'Profile and contact'], ['hero', 'Hero'], ['signoff', 'Sign-off panel'], ['projects', 'Projects'], ['experience', 'Experience'], ['impact', 'Impact numbers'], ['toolkit', 'Toolkit'], ['recognition', 'Recognition'], ['certifications', 'Certifications'], ['posts', 'Writing'], ['now', 'Now and education']] },
-  { label: 'Site', tabs: [['sections', 'Sections and order'], ['inbox', 'Inbox'], ['seo', 'SEO and sharing'], ['settings', 'Backup and security']] },
+  { label: 'Content', tabs: [['profile', 'Profile and contact'], ['hero', 'Hero'], ['signoff', 'Sign-off panel'], ['projects', 'Projects'], ['ai', 'AI in QA'], ['experience', 'Experience'], ['impact', 'Impact numbers'], ['toolkit', 'Toolkit'], ['recognition', 'Recognition'], ['certifications', 'Certifications'], ['posts', 'Writing'], ['now', 'Now and education']] },
+  { label: 'Site', tabs: [['sections', 'Sections and order'], ['inbox', 'Inbox'], ['seo', 'SEO and sharing'], ['theme', 'Theme'], ['settings', 'Backup and security']] },
 ];
 
 const EMPTY_HINT: Record<Content['sections'][number]['id'], string> = {
   signoff: 'Add at least one check in Sign-off panel.',
   projects: 'Add a project, or turn on Show on site for one, in Projects.',
+  ai: 'Add an intro or a step in AI in QA.',
   impact: 'Add a number in Impact numbers.',
   experience: 'Add a job, or turn on Show on site for one, in Experience.',
   recognition: 'Add an item in Recognition.',
-  toolkit: 'Add a tool or a How I work line in Toolkit.',
+  toolkit: 'Add a tool, a How I run QA line or a template in Toolkit.',
   certifications: 'Add a certification in Certifications.',
   blog: 'Publish a post in Writing.',
   now: 'Add a line or an education entry in Now and education.',
@@ -53,6 +56,25 @@ type Banner = { kind: 'ok' | 'err' | 'info'; text: string; issues?: { path: stri
 
 const clone = <T,>(v: T): T => structuredClone(v);
 const today = () => new Date().toISOString().slice(0, 10);
+const CASE_STUDY_OUTLINE = `## Context and risk
+
+What the product does, who uses it, and what would hurt most if it broke.
+
+## Test strategy
+
+What you chose to test deeply, what you covered lightly, and why.
+
+## One hard call
+
+A release you held back, a risk you raised, or a defect that escaped and what you changed after it.
+
+## Outcome
+
+What shipped and the numbers behind it, with the period they cover.
+
+## What I would do differently
+`;
+
 const slugify = (s: string) =>
   s
     .toLowerCase()
@@ -310,7 +332,7 @@ export function AdminApp({ initialContent, initialMessages, email, storage, uplo
             <ListEditor
               items={content.projects}
               addLabel="Add project"
-              create={() => ({ id: newId(), visible: true, title: 'New project', domain: '', status: 'Shipped', summary: '', role: '', tested: [], link: '' })}
+              create={() => ({ id: newId(), visible: true, title: 'New project', domain: '', status: 'Shipped', summary: '', role: '', tested: [], link: '', employer: '', period: '', caseStudy: '' })}
               title={(p) => p.title}
               badge={(p) => (p.visible ? null : 'Hidden')}
               onChange={(v) => update((d) => void (d.projects = v))}
@@ -322,10 +344,67 @@ export function AdminApp({ initialContent, initialMessages, email, storage, uplo
                     <TextField label="Domain" placeholder="EdTech" value={p.domain} onChange={(v) => set({ domain: v })} />
                     <TextField label="Badge" placeholder="Live, Shipped, Releasing soon" value={p.status} onChange={(v) => set({ status: v })} />
                     <TextField label="Your role" value={p.role} onChange={(v) => set({ role: v })} />
+                    <TextField label="Employer" value={p.employer} onChange={(v) => set({ employer: v })} />
+                    <TextField label="Project dates" placeholder="2023 – 2025" value={p.period} onChange={(v) => set({ period: v })} />
                   </div>
                   <AreaField label="Summary" value={p.summary} onChange={(v) => set({ summary: v })} />
                   <LinesField label="Testing scope" value={p.tested} onChange={(v) => set({ tested: v })} />
                   <TextField label="Link (optional)" type="url" value={p.link} onChange={(v) => set({ link: v })} />
+                  <AreaField
+                    label="Case study (Markdown, optional)"
+                    rows={14}
+                    mono
+                    hint={`Once this has text, the card links to its own page at /projects/${p.id}. Leave blank for no page.`}
+                    value={p.caseStudy}
+                    onChange={(v) => set({ caseStudy: v })}
+                  />
+                  {!p.caseStudy.trim() && (
+                    <button className="adm-btn small ghost" type="button" onClick={() => set({ caseStudy: CASE_STUDY_OUTLINE })}>
+                      Insert case study outline
+                    </button>
+                  )}
+                </>
+              )}
+            />
+          </Card>
+        )}
+
+        {tab === 'ai' && (
+          <Card title="AI in QA" description="A featured section for the AI agents you built. Blank parts are not shown.">
+            <AreaField label="Intro" value={content.ai.intro} onChange={(v) => update((d) => void (d.ai.intro = v))} />
+            <h3 className="adm-sub">Steps</h3>
+            <ListEditor
+              items={content.ai.steps}
+              max={6}
+              addLabel="Add step"
+              create={() => ({ title: '', detail: '' })}
+              title={(s) => s.title}
+              onChange={(v) => update((d) => void (d.ai.steps = v))}
+              render={(s, set) => (
+                <>
+                  <TextField label="Step" value={s.title} onChange={(v) => set({ title: v })} />
+                  <AreaField label="What the agent does" value={s.detail} onChange={(v) => set({ detail: v })} />
+                </>
+              )}
+            />
+            <AreaField
+              label="Result (optional)"
+              hint="A before and after you measured, e.g. time to write a test plan. Leave blank until you have the number."
+              value={content.ai.result}
+              onChange={(v) => update((d) => void (d.ai.result = v))}
+            />
+            <h3 className="adm-sub">Sample outputs</h3>
+            <ListEditor
+              items={content.ai.samples}
+              max={6}
+              addLabel="Add sample"
+              create={() => ({ title: '', body: '' })}
+              title={(s) => s.title}
+              onChange={(v) => update((d) => void (d.ai.samples = v))}
+              render={(s, set) => (
+                <>
+                  <TextField label="Sample title" placeholder="Bug report written by the defect agent" value={s.title} onChange={(v) => set({ title: v })} />
+                  <AreaField label="Output" rows={10} mono hint="Shown exactly as typed. Remove client names, ticket numbers and people's names first." value={s.body} onChange={(v) => set({ body: v })} />
                 </>
               )}
             />
@@ -367,15 +446,18 @@ export function AdminApp({ initialContent, initialMessages, email, storage, uplo
               items={content.impact}
               max={12}
               addLabel="Add number"
-              create={() => ({ value: '', label: '', source: '' })}
+              create={() => ({ value: '', label: '', source: '', note: '' })}
               title={(m) => [m.value, m.label].filter(Boolean).join(' ')}
               onChange={(v) => update((d) => void (d.impact = v))}
               render={(m, set) => (
-                <div className="adm-grid three">
-                  <TextField label="Value" placeholder="95%" value={m.value} onChange={(v) => set({ value: v })} />
-                  <TextField label="What it measures" value={m.label} onChange={(v) => set({ label: v })} />
-                  <TextField label="Source" placeholder="Company or project" value={m.source} onChange={(v) => set({ source: v })} />
-                </div>
+                <>
+                  <div className="adm-grid three">
+                    <TextField label="Value" placeholder="95%" value={m.value} onChange={(v) => set({ value: v })} />
+                    <TextField label="What it measures" value={m.label} onChange={(v) => set({ label: v })} />
+                    <TextField label="Source" placeholder="Company, 2022–2024" value={m.source} onChange={(v) => set({ source: v })} />
+                  </div>
+                  <TextField label="How it was measured (optional)" placeholder="Sev-1 and Sev-2 defects found in production per release, 2022 vs 2024" value={m.note} onChange={(v) => set({ note: v })} />
+                </>
               )}
             />
           </Card>
@@ -399,7 +481,37 @@ export function AdminApp({ initialContent, initialMessages, email, storage, uplo
                 </div>
               )}
             />
-            <LinesField label="How I work" value={content.practices} onChange={(v) => update((d) => void (d.practices = v))} />
+            <h3 className="adm-sub">How I run QA</h3>
+            <ListEditor
+              items={content.practices}
+              max={30}
+              addLabel="Add practice"
+              create={() => ({ title: '', detail: '' })}
+              title={(p) => p.title}
+              onChange={(v) => update((d) => void (d.practices = v))}
+              render={(p, set) => (
+                <>
+                  <TextField label="Practice" value={p.title} onChange={(v) => set({ title: v })} />
+                  <AreaField label="Your rule or routine (optional)" hint="Say what you actually do, e.g. the conditions that make you hold a release." value={p.detail} onChange={(v) => set({ detail: v })} />
+                </>
+              )}
+            />
+            <h3 className="adm-sub">Templates to download</h3>
+            <ListEditor
+              items={content.artifacts}
+              max={12}
+              addLabel="Add template"
+              create={() => ({ title: 'New template', description: '', url: '' })}
+              title={(a) => a.title}
+              onChange={(v) => update((d) => void (d.artifacts = v))}
+              render={(a, set) => (
+                <>
+                  <TextField label="Title" placeholder="Release sign-off report" value={a.title} onChange={(v) => set({ title: v })} />
+                  <TextField label="One-line description" value={a.description} onChange={(v) => set({ description: v })} />
+                  <UploadField label="PDF" hint="Remove client names and real data before uploading." accept="application/pdf" kind="pdf" value={a.url} onChange={(v) => set({ url: v })} />
+                </>
+              )}
+            />
           </Card>
         )}
 
@@ -459,14 +571,20 @@ export function AdminApp({ initialContent, initialMessages, email, storage, uplo
               addLabel="New post"
               create={() => ({ slug: `post-${newId()}`, published: false, title: 'Untitled post', date: today(), summary: '', tags: [], body: '' })}
               title={(p) => p.title}
-              badge={(p) => (p.published ? 'Published' : 'Draft')}
+              badge={(p) => (isScheduled(p) ? `Scheduled for ${p.date}` : p.published ? 'Published' : 'Draft')}
               onChange={(v) => update((d) => void (d.posts = v))}
               render={(p, set) => (
                 <>
                   <Toggle label="Published" hint="Also turn on the Writing section in Sections and order." checked={p.published} onChange={(v) => set({ published: v })} />
                   <div className="adm-grid">
                     <TextField label="Title" value={p.title} onChange={(v) => set({ title: v })} />
-                    <TextField label="Date" type="date" value={p.date} onChange={(v) => set({ date: v })} />
+                    <TextField
+                      label="Date"
+                      type="date"
+                      hint={isScheduled(p) ? 'Scheduled. It appears on the site by itself on this date (India time), within about an hour of midnight.' : 'Pick a future date and turn on Published to schedule the post.'}
+                      value={p.date}
+                      onChange={(v) => set({ date: v })}
+                    />
                   </div>
                   <div className="adm-grid">
                     <TextField label="URL slug" hint={`Address: /blog/${p.slug}`} value={p.slug} onChange={(v) => set({ slug: slugify(v) })} />
@@ -482,7 +600,7 @@ export function AdminApp({ initialContent, initialMessages, email, storage, uplo
                   <AreaField label="Summary" hint="Shown in lists and link previews." value={p.summary} onChange={(v) => set({ summary: v })} />
                   <LinesField label="Tags" rows={2} value={p.tags} onChange={(v) => set({ tags: v })} />
                   <AreaField label="Body (Markdown)" rows={16} mono hint="## for headings, - for bullets, **bold**, [text](https://link)." value={p.body} onChange={(v) => set({ body: v })} />
-                  {p.published && (
+                  {isLive(p) && (
                     <a className="adm-btn small ghost" href={`/blog/${p.slug}`} target="_blank" rel="noopener noreferrer">
                       Open published post
                     </a>
@@ -563,6 +681,17 @@ export function AdminApp({ initialContent, initialMessages, email, storage, uplo
             <p className="adm-hint">
               Preview card image: <a href="/opengraph-image" target="_blank" rel="noopener noreferrer">open it</a>. It's generated from your name, headline and checks.
             </p>
+          </Card>
+        )}
+
+        {tab === 'theme' && (
+          <Card title="Theme" description="The colours of the public site. This admin panel always stays light.">
+            <Toggle
+              label="Dark theme"
+              hint="Near-black background with green accents. Off gives the light theme."
+              checked={site.theme === 'dark'}
+              onChange={(v) => update((d) => void (d.site.theme = v ? 'dark' : 'light'))}
+            />
           </Card>
         )}
 

@@ -12,7 +12,7 @@ export default async function OgImage() {
   const checks = signoff.checks.slice(0, 4);
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', background: '#f7f9f7', padding: 64, fontFamily: 'sans-serif' }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', background: '#f2f6f3', padding: 64, fontFamily: 'sans-serif' }}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1.3, justifyContent: 'center', gap: 22 }}>
           <div style={{ display: 'flex', fontSize: 28, fontWeight: 700, color: '#1b6e45' }}>
             {site.name}, {site.role}

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Content, Section } from '@/lib/schema';
-import { isRendered, renderedSections } from '@/lib/visibility';
+import { isLive, isRendered, renderedSections } from '@/lib/visibility';
 import { SignoffRun } from './SignoffRun';
 import { ContactCards } from './ContactCards';
 import { ContactForm } from './ContactForm';
@@ -75,12 +75,42 @@ export function Hero({ content }: { content: Content }) {
 
 type Props = { s: Section; content: Content };
 
+/** A project gets its own page once it has a case study written. */
+export const hasCaseStudy = (p: Content['projects'][number]) => p.visible && p.caseStudy.trim().length > 0;
+
+// The panel above is an illustration. This points to the real thing: the suites that test
+// this site. It only shows once the repository address is set, so it never links nowhere.
+function TestEvidence({ repoUrl }: { repoUrl: string }) {
+  if (!repoUrl) return null;
+  const repo = repoUrl.replace(/\/$/, '');
+  const onGitHub = repo.startsWith('https://github.com/');
+  return (
+    <p className="evidence" data-testid="test-evidence">
+      The panel is an illustration. The real checks are the Playwright suites that test this site on every push: functionality on desktop and mobile,
+      accessibility (axe, WCAG 2.2 AA), SEO and admin security.{' '}
+      {onGitHub && (
+        <>
+          <a href={`${repo}/actions`} target="_blank" rel="noopener noreferrer">
+            See the latest runs
+          </a>{' '}
+          or{' '}
+        </>
+      )}
+      <a href={onGitHub ? `${repo}/tree/main/tests` : repo} target="_blank" rel="noopener noreferrer">
+        read the tests
+      </a>
+      .
+    </p>
+  );
+}
+
 function Signoff({ s, content }: Props) {
   return (
-    <section id={s.id} className="run-section" aria-labelledby={`${s.id}-title`}>
+    <section id={s.id} aria-labelledby={`${s.id}-title`}>
       <div className="wrap">
         <Head s={s} />
         <SignoffRun signoff={content.signoff} />
+        <TestEvidence repoUrl={content.site.repoUrl} />
       </div>
     </section>
   );
@@ -111,6 +141,7 @@ function Projects({ s, content }: Props) {
               </h3>
               <p className="project-summary">{p.summary}</p>
               {p.role && <p className="project-role">My role: {p.role}</p>}
+              {(p.employer || p.period) && <p className="project-meta">{[p.employer, p.period].filter(Boolean).join(', ')}</p>}
               {p.tested.length > 0 && (
                 <div className="tested">
                   <h4>Testing scope</h4>
@@ -121,6 +152,11 @@ function Projects({ s, content }: Props) {
                   </ul>
                 </div>
               )}
+              {hasCaseStudy(p) && (
+                <Link className="more-link" href={`/projects/${p.id}`} aria-label={`Read the ${p.title} case study`}>
+                  Read the case study
+                </Link>
+              )}
             </article>
           ))}
         </div>
@@ -129,10 +165,47 @@ function Projects({ s, content }: Props) {
   );
 }
 
+function Ai({ s, content }: Props) {
+  const { ai } = content;
+  return (
+    <section id={s.id} aria-labelledby={`${s.id}-title`}>
+      <div className="wrap">
+        <Head s={s} />
+        {ai.intro && <p className="ai-intro">{ai.intro}</p>}
+        {ai.steps.length > 0 && (
+          <ol className="ai-steps">
+            {ai.steps.map((step, i) => (
+              <li key={i}>
+                <span className="ai-num" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <h3>{step.title}</h3>
+                {step.detail && <p>{step.detail}</p>}
+              </li>
+            ))}
+          </ol>
+        )}
+        {ai.result && <p className="ai-result">{ai.result}</p>}
+        {ai.samples.length > 0 && (
+          <div className="ai-samples">
+            <h3>Sample output</h3>
+            {ai.samples.map((sample, i) => (
+              <details key={i}>
+                <summary>{sample.title}</summary>
+                <pre tabIndex={0}>{sample.body}</pre>
+              </details>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function Impact({ s, content }: Props) {
   if (!content.impact.length) return null;
   return (
-    <section id={s.id} className="band" aria-labelledby={`${s.id}-title`}>
+    <section id={s.id} aria-labelledby={`${s.id}-title`}>
       <div className="wrap">
         <Head s={s} />
         <dl className="impact">
@@ -141,6 +214,7 @@ function Impact({ s, content }: Props) {
               <dt>{m.value}</dt>
               <dd className="label">{m.label}</dd>
               {m.source && <dd className="source">{m.source}</dd>}
+              {m.note && <dd className="note">{m.note}</dd>}
             </div>
           ))}
         </dl>
@@ -186,7 +260,7 @@ function Recognition({ s, content }: Props) {
   const items = content.recognition.filter((r) => r.visible);
   if (!items.length) return null;
   return (
-    <section id={s.id} className="band" aria-labelledby={`${s.id}-title`}>
+    <section id={s.id} aria-labelledby={`${s.id}-title`}>
       <div className="wrap">
         <Head s={s} />
         <div className="recognition">
@@ -210,7 +284,7 @@ function Recognition({ s, content }: Props) {
 }
 
 function Toolkit({ s, content }: Props) {
-  if (!content.toolkit.length && !content.practices.length) return null;
+  if (!content.toolkit.length && !content.practices.length && !content.artifacts.length) return null;
   return (
     <section id={s.id} aria-labelledby={`${s.id}-title`}>
       <div className="wrap">
@@ -226,16 +300,40 @@ function Toolkit({ s, content }: Props) {
             ))}
           </ul>
         )}
-        {content.practices.length > 0 && (
+        {(content.practices.length > 0 || content.artifacts.length > 0) && (
           <div className="two-col">
-            <div>
-              <h3>How I work</h3>
-              <ul>
-                {content.practices.map((p, i) => (
-                  <li key={i}>{p}</li>
-                ))}
-              </ul>
-            </div>
+            {content.practices.length > 0 && (
+              <div>
+                <h3>How I run QA</h3>
+                <ul className="practices">
+                  {content.practices.map((p, i) => (
+                    <li key={i}>
+                      {p.detail ? <strong>{p.title}</strong> : p.title}
+                      {p.detail && <span>{p.detail}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {content.artifacts.length > 0 && (
+              <div>
+                <h3>Templates I use</h3>
+                <ul className="practices">
+                  {content.artifacts.map((a, i) => (
+                    <li key={i}>
+                      {a.url ? (
+                        <a href={a.url} target="_blank" rel="noopener noreferrer">
+                          {a.title}
+                        </a>
+                      ) : (
+                        <strong>{a.title}</strong>
+                      )}
+                      {a.description && <span>{a.description}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -275,10 +373,10 @@ export function formatDate(iso: string) {
 }
 
 function Blog({ s, content }: Props) {
-  const posts = content.posts.filter((p) => p.published).sort((a, b) => b.date.localeCompare(a.date));
+  const posts = content.posts.filter(isLive).sort((a, b) => b.date.localeCompare(a.date));
   if (!posts.length) return null;
   return (
-    <section id={s.id} className="band" aria-labelledby={`${s.id}-title`}>
+    <section id={s.id} aria-labelledby={`${s.id}-title`}>
       <div className="wrap">
         <Head s={s} />
         <ul className="posts">
@@ -337,14 +435,60 @@ function Now({ s, content }: Props) {
   );
 }
 
+// Decorative speech bubbles for the contact card, drawn inline so there is no image to load.
+function ChatArt() {
+  return (
+    <div className="chat-art" aria-hidden="true">
+      <svg viewBox="0 0 320 280" role="presentation">
+        <defs>
+          <radialGradient id="bubble-back" cx="38%" cy="28%" r="80%">
+            <stop offset="0" stopColor="#ffe6b8" />
+            <stop offset="0.5" stopColor="#f2a65a" />
+            <stop offset="1" stopColor="#c9553f" />
+          </radialGradient>
+          <radialGradient id="bubble-front" cx="34%" cy="26%" r="85%">
+            <stop offset="0" stopColor="#c9f8de" />
+            <stop offset="0.45" stopColor="#3fc48a" />
+            <stop offset="1" stopColor="#0b6b5c" />
+          </radialGradient>
+        </defs>
+        <g className="bubble back">
+          <path d="M252 158q12 24 34 28-20-8-14-38z" fill="#c9553f" />
+          <ellipse cx="212" cy="104" rx="86" ry="68" fill="url(#bubble-back)" />
+        </g>
+        <g className="bubble front">
+          <path d="M92 232q-8 28-34 38 28-2 56-28z" fill="#0b6b5c" />
+          <ellipse cx="132" cy="166" rx="106" ry="82" fill="url(#bubble-front)" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 function Contact({ s, content }: Props) {
   const { site } = content;
   const phoneEncoded = site.showPhone && site.phone ? Buffer.from(site.phone).toString('base64') : '';
   return (
     <section id={s.id} className="contact" aria-labelledby={`${s.id}-title`}>
-      <div className="wrap">
-        <Head s={s} dark />
-        <ContactCards email={site.email} phoneEncoded={phoneEncoded} linkedin={site.linkedin} github={site.github} resumeUrl={site.resumeUrl} />
+      <div className="wrap contact-stack">
+        <div className="say-card">
+          <div className="contact-info">
+          <Head s={s} dark />
+          {(site.location || (site.showAvailability && site.availability)) && (
+            <p className="contact-meta">
+              {site.showAvailability && site.availability && (
+                <span className="contact-open">
+                  <span className="dot" aria-hidden="true" />
+                  {site.availability}
+                </span>
+              )}
+              {site.location && <span>Based in {site.location}</span>}
+            </p>
+          )}
+          <ContactCards email={site.email} phoneEncoded={phoneEncoded} linkedin={site.linkedin} github={site.github} resumeUrl={site.resumeUrl} />
+          </div>
+          <ChatArt />
+        </div>
         {content.contact.formEnabled && <ContactForm intro={content.contact.formIntro} />}
       </div>
     </section>
@@ -354,6 +498,7 @@ function Contact({ s, content }: Props) {
 const RENDERERS: Record<Section['id'], (p: Props) => React.ReactNode> = {
   signoff: Signoff,
   projects: Projects,
+  ai: Ai,
   impact: Impact,
   experience: Experience,
   recognition: Recognition,

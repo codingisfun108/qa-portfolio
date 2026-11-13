@@ -42,6 +42,31 @@ test.describe('Homepage', () => {
     }
   });
 
+  test('AI section shows every step', async ({ page }) => {
+    test.skip(!visible('ai'));
+    await page.goto('/');
+    await expect(page.locator('#ai .ai-steps > li')).toHaveCount(seed.ai.steps.length);
+    for (const step of seed.ai.steps) await expect(page.locator('#ai')).toContainText(step.title);
+    // Blank parts leave no empty boxes behind.
+    await expect(page.locator('#ai .ai-samples')).toHaveCount(seed.ai.samples.length ? 1 : 0);
+    await expect(page.locator('#ai .ai-result')).toHaveCount(seed.ai.result ? 1 : 0);
+  });
+
+  test('test evidence line appears only when the repo address is set', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('test-evidence')).toHaveCount(seed.site.repoUrl ? 1 : 0);
+  });
+
+  test('only projects with a case study link to one', async ({ page }) => {
+    await page.goto('/');
+    const withStudy = seed.projects.filter((p) => p.visible && p.caseStudy.trim());
+    await expect(page.getByRole('link', { name: /^Read the .* case study$/ })).toHaveCount(withStudy.length);
+    for (const p of withStudy) {
+      await page.goto(`/projects/${p.id}`);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(p.title);
+    }
+  });
+
   test('impact figures render with their sources', async ({ page }) => {
     test.skip(!visible('impact'));
     await page.goto('/');
@@ -199,5 +224,8 @@ test.describe('SEO', () => {
     expect((await page.goto('/does-not-exist'))?.status()).toBe(404);
     const draft = seed.posts.find((p) => !p.published);
     if (draft) expect((await page.goto(`/blog/${draft.slug}`))?.status()).toBe(404);
+    const noStudy = seed.projects.find((p) => !p.caseStudy.trim());
+    if (noStudy) expect((await page.goto(`/projects/${noStudy.id}`))?.status()).toBe(404);
+    expect((await page.goto('/projects/does-not-exist'))?.status()).toBe(404);
   });
 });

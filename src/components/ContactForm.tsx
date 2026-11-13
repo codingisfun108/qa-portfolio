@@ -33,10 +33,11 @@ export function ContactForm({ intro }: { intro: string }) {
 
   return (
     <form className="contact-form" method="post" onSubmit={onSubmit} aria-labelledby="form-title">
-      <div>
+      <div className="form-head">
         <h3 id="form-title">Send a message</h3>
         {intro && <p className="form-intro">{intro}</p>}
       </div>
+      <div className="form-fields">
       <div className="field-row">
         <div className="field">
           <label htmlFor="cf-name">Your name</label>
@@ -59,14 +60,13 @@ export function ContactForm({ intro }: { intro: string }) {
         <label htmlFor="cf-website">Leave this empty</label>
         <input id="cf-website" name="website" tabIndex={-1} autoComplete="off" />
       </div>
-      <div className="cactions">
-        <button className="btn primary" type="submit" disabled={!ready || status.kind === 'sending'}>
-          {status.kind === 'sending' ? 'Sending…' : 'Send message'}
-        </button>
-      </div>
+      <button className="btn primary form-submit" type="submit" disabled={!ready || status.kind === 'sending'}>
+        {status.kind === 'sending' ? 'Sending…' : 'Send message'}
+      </button>
       <p className={`form-status ${status.kind === 'ok' ? 'ok' : status.kind === 'err' ? 'err' : ''}`} role="status" aria-live="polite">
         {status.kind === 'ok' || status.kind === 'err' ? status.text : ''}
       </p>
+      </div>
     </form>
   );
 }
