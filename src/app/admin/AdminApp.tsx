@@ -30,11 +30,12 @@ type Tab =
   | 'now'
   | 'inbox'
   | 'seo'
+  | 'theme'
   | 'settings';
 
 const GROUPS: { label: string; tabs: [Tab, string][] }[] = [
   { label: 'Content', tabs: [['profile', 'Profile and contact'], ['hero', 'Hero'], ['signoff', 'Sign-off panel'], ['projects', 'Projects'], ['ai', 'AI in QA'], ['experience', 'Experience'], ['impact', 'Impact numbers'], ['toolkit', 'Toolkit'], ['recognition', 'Recognition'], ['certifications', 'Certifications'], ['posts', 'Writing'], ['now', 'Now and education']] },
-  { label: 'Site', tabs: [['sections', 'Sections and order'], ['inbox', 'Inbox'], ['seo', 'SEO and sharing'], ['settings', 'Backup and security']] },
+  { label: 'Site', tabs: [['sections', 'Sections and order'], ['inbox', 'Inbox'], ['seo', 'SEO and sharing'], ['theme', 'Theme'], ['settings', 'Backup and security']] },
 ];
 
 const EMPTY_HINT: Record<Content['sections'][number]['id'], string> = {
@@ -680,6 +681,17 @@ export function AdminApp({ initialContent, initialMessages, email, storage, uplo
             <p className="adm-hint">
               Preview card image: <a href="/opengraph-image" target="_blank" rel="noopener noreferrer">open it</a>. It's generated from your name, headline and checks.
             </p>
+          </Card>
+        )}
+
+        {tab === 'theme' && (
+          <Card title="Theme" description="The colours of the public site. This admin panel always stays light.">
+            <Toggle
+              label="Dark theme"
+              hint="Near-black background with green accents. Off gives the light theme."
+              checked={site.theme === 'dark'}
+              onChange={(v) => update((d) => void (d.site.theme = v ? 'dark' : 'light'))}
+            />
           </Card>
         )}
 

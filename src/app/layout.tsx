@@ -42,16 +42,18 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const viewport: Viewport = {
-  themeColor: '#f7f9f7',
-  width: 'device-width',
-  initialScale: 1,
-  viewportFit: 'cover',
-};
+// Matches --paper in globals.css for each theme, so the browser bar blends with the page.
+const THEME_COLOR = { light: '#f2f6f3', dark: '#0a0d0c' } as const;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export async function generateViewport(): Promise<Viewport> {
+  const { site } = await getContent();
+  return { themeColor: THEME_COLOR[site.theme], width: 'device-width', initialScale: 1, viewportFit: 'cover' };
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { site } = await getContent();
   return (
-    <html lang="en" className={`${schibsted.variable} ${jetbrains.variable}`}>
+    <html lang="en" data-theme={site.theme} className={`${schibsted.variable} ${jetbrains.variable}`}>
       <body>
         {children}
         {/* Vercel Web Analytics only exists on Vercel deployments. */}

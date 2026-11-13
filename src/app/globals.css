@@ -1,7 +1,7 @@
 /* Layout: left-aligned single column, max 1120px. Hero = pitch + portrait; a dark test-run
    panel is the one bold element; everything else is light cards on a cool off-white. */
 :root {
-  --paper: #f7f9f7;
+  --paper: #f2f6f3;
   --panel: #ffffff;
   --ink: #15201a;
   --muted: #56635c;
@@ -12,6 +12,8 @@
   --term-ink: #dfe9e3;
   --term-dim: #8fa398;
   --term-pass: #6fd39b;
+  --on-ink: #ffffff; /* text on an ink-coloured button */
+  --tag-bg: rgb(255 255 255 / 0.9);
 
   --font-sans: var(--font-schibsted), 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -132,7 +134,7 @@ p {
 .btn.primary {
   background: var(--ink);
   border-color: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
 }
 
 .btn.primary:hover {
@@ -179,7 +181,7 @@ p {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: var(--ink);
+  background: var(--term-bg);
   color: var(--term-pass);
   font-size: 0.8rem;
   font-weight: 800;
@@ -203,8 +205,26 @@ p {
 
 /* Sections */
 main section {
-  padding-block: 88px;
+  padding-block: 64px;
   scroll-margin-top: 64px;
+}
+
+/* Theme: sections alternate between two surfaces by their position on the page, whatever
+   order they are in, so no two neighbours share a background. Cards inside take the
+   opposite surface. The dark contact section is the one exception. */
+main > section {
+  --surface: var(--paper);
+  --card: var(--panel);
+  background: var(--surface);
+}
+
+main > section:nth-child(even) {
+  --surface: var(--panel);
+  --card: var(--paper);
+}
+
+main > section + section {
+  border-top: 1px solid var(--rule);
 }
 
 .section-head {
@@ -227,7 +247,7 @@ main section {
 
 /* Hero */
 .hero-section {
-  padding-block: 72px 88px;
+  padding-block: 64px 72px;
 }
 
 .hero {
@@ -371,7 +391,7 @@ main section {
   gap: 2px;
   padding: 12px 16px;
   border-radius: 14px;
-  background: rgb(255 255 255 / 0.9);
+  background: var(--tag-bg);
   backdrop-filter: blur(6px);
   font-size: var(--step--1);
   color: var(--muted);
@@ -383,11 +403,6 @@ main section {
 }
 
 /* Release test run: the page's one bold element */
-.run-section {
-  background: var(--panel);
-  border-block: 1px solid var(--rule);
-}
-
 .term {
   background: var(--term-bg);
   color: var(--term-ink);
@@ -545,7 +560,7 @@ main section {
   flex-direction: column;
   gap: 12px;
   padding: 26px;
-  background: var(--panel);
+  background: var(--card);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   min-width: 0;
@@ -658,7 +673,7 @@ main section {
 
 .ai-steps li {
   padding: 22px;
-  background: var(--paper);
+  background: var(--card);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   display: grid;
@@ -711,7 +726,7 @@ main section {
 .ai-samples details {
   border: 1px solid var(--rule);
   border-radius: 12px;
-  background: var(--paper);
+  background: var(--card);
   min-width: 0;
 }
 
@@ -752,12 +767,6 @@ main section {
 .impact .note {
   font-size: var(--step--1);
   color: var(--muted);
-}
-
-/* Alternating bands */
-.band {
-  background: var(--panel);
-  border-block: 1px solid var(--rule);
 }
 
 .impact {
@@ -828,7 +837,7 @@ main section {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--paper);
+  background: var(--surface);
   border: 2px solid var(--muted);
 }
 
@@ -895,7 +904,7 @@ main section {
   align-content: start;
   gap: 6px;
   padding: 18px;
-  background: var(--panel);
+  background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 14px;
   min-width: 0;
@@ -946,33 +955,58 @@ main section {
 }
 
 /* Contact */
-.contact {
-  background: var(--term-bg);
-  color: var(--term-ink);
-}
-
 .contact .section-head p {
-  color: var(--term-dim);
+  color: var(--muted);
 }
 
-/* Two columns: ways to reach me on the left, the message form on the right. */
-.contact-grid {
+/* The contact block: one rounded card with the ways to reach me and a pair of speech
+   bubbles, then the message form as a second card. */
+/* Everything here uses the theme tokens, so the block is light in the light theme and
+   dark in the dark theme. Only the heading gradient and error colour differ per theme. */
+.contact {
+  --say-grad: linear-gradient(95deg, #c2571a, #1b6e45 55%, #0e7490);
+  --say-err: #b42318;
+}
+
+.contact-stack {
   display: grid;
-  gap: 48px;
+  gap: 24px;
 }
 
-.contact-grid.split {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 72px;
-  align-items: start;
+.say-card,
+.contact-form {
+  border-radius: 28px;
+  background: linear-gradient(115deg, var(--card), color-mix(in srgb, var(--pass) 9%, var(--card)));
+  border: 1px solid var(--rule);
+  box-shadow: 0 30px 60px -45px rgb(19 33 26 / 0.45);
 }
 
-.contact-grid:not(.split) .contact-info {
-  max-width: 720px;
+.say-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 40px;
+  padding: 56px;
+  overflow: hidden;
 }
 
 .contact .section-head {
   margin-bottom: 20px;
+}
+
+.contact .section-head h2 {
+  font-size: clamp(2.3rem, 5vw, 3.4rem);
+  line-height: 1.05;
+  background: var(--say-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  justify-self: start;
+}
+
+.contact .section-head p {
+  font-size: 1.2rem;
+  color: var(--ink);
 }
 
 .contact-meta {
@@ -980,9 +1014,9 @@ main section {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 18px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   font-size: var(--step--1);
-  color: var(--term-dim);
+  color: var(--muted);
 }
 
 .contact-open {
@@ -991,108 +1025,151 @@ main section {
   gap: 8px;
   padding: 5px 12px 5px 10px;
   border-radius: 999px;
-  border: 1px solid rgb(111 211 155 / 0.35);
-  color: var(--term-pass);
+  border: 1px solid color-mix(in srgb, var(--pass) 40%, transparent);
+  color: var(--pass);
   font-weight: 700;
 }
 
 .contact-open .dot {
-  background: var(--term-pass);
+  background: var(--pass);
 }
 
-/* One row per contact method, divided by hairlines instead of boxed cards. */
 .contact-cards {
   list-style: none;
   padding: 0;
   margin: 0;
-  border-top: 1px solid rgb(255 255 255 / 0.12);
+  display: grid;
+  gap: 16px;
 }
 
 .ccard {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 40px minmax(0, 1fr);
   align-items: center;
-  gap: 8px 16px;
-  padding: 18px 0;
-  border-bottom: 1px solid rgb(255 255 255 / 0.12);
+  gap: 2px 14px;
   min-width: 0;
 }
 
 .cicon {
-  width: 44px;
-  height: 44px;
+  grid-row: span 2;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   border-radius: 12px;
-  background: rgb(111 211 155 / 0.1);
-  color: var(--term-pass);
+  background: var(--pass-tint);
+  color: var(--pass);
 }
 
 .ctext {
   min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 10px;
 }
 
 .ccard h3 {
   font-size: 0.8rem;
-  color: var(--term-dim);
+  color: var(--muted);
   font-weight: 600;
-  letter-spacing: 0.02em;
 }
 
 .cvalue {
   font-weight: 700;
-  font-size: 1.02rem;
   overflow-wrap: anywhere;
 }
 
 .cactions {
+  grid-column: 2;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
+  gap: 4px 18px;
 }
 
-@media (max-width: 980px) {
-  .contact-grid.split {
+/* Actions read as links, not buttons, so the card stays light. */
+.clink {
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--pass);
+  background: none;
+  border: 0;
+  padding: 3px 0;
+  min-height: 28px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.clink:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.chat-art {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 340px);
+}
+
+.chat-art::before {
+  content: '';
+  position: absolute;
+  inset: 10% -5% -10%;
+  background:
+    radial-gradient(closest-side at 62% 35%, rgb(242 166 90 / 0.35), transparent),
+    radial-gradient(closest-side at 40% 65%, rgb(63 196 138 / 0.4), transparent);
+  filter: blur(34px);
+}
+
+.chat-art svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bubble {
+    animation: bob 6s ease-in-out infinite;
+  }
+
+  .bubble.back {
+    animation-delay: -3s;
+  }
+
+  @keyframes bob {
+    50% {
+      transform: translateY(-7px);
+    }
+  }
+}
+
+@media (max-width: 860px) {
+  .say-card {
     grid-template-columns: minmax(0, 1fr);
-    gap: 48px;
-  }
-}
-
-@media (max-width: 520px) {
-  .ccard {
-    grid-template-columns: 44px minmax(0, 1fr);
+    padding: 32px 24px;
   }
 
-  .cactions {
-    grid-column: 2;
-    justify-content: flex-start;
+  .chat-art {
+    order: -1;
+    width: 180px;
+    justify-self: start;
   }
-}
-
-.contact .btn {
-  background: transparent;
-  border-color: rgb(255 255 255 / 0.25);
-  color: var(--term-ink);
-}
-
-.contact .btn:hover {
-  border-color: var(--term-ink);
 }
 
 .contact .btn.primary {
-  background: var(--term-pass);
-  border-color: var(--term-pass);
-  color: var(--term-bg);
+  background: var(--pass);
+  border-color: var(--pass);
+  color: var(--on-ink);
 }
 
 .contact .btn.primary:hover {
-  background: #8ee3b3;
-  border-color: #8ee3b3;
+  filter: brightness(1.12);
 }
 
 .contact :focus-visible {
-  outline-color: var(--term-pass);
+  outline-color: var(--pass);
 }
 
 /* Footer */
@@ -1132,7 +1209,7 @@ main section {
   align-content: start;
   gap: 12px;
   padding: 26px;
-  background: var(--panel);
+  background: var(--card);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   min-width: 0;
@@ -1177,7 +1254,7 @@ main section {
   display: grid;
   gap: 4px;
   padding: 18px 20px;
-  background: var(--panel);
+  background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 14px;
 }
@@ -1333,13 +1410,28 @@ main section {
 
 /* Contact form */
 .contact-form {
-  padding: 32px;
-  border-radius: 20px;
-  background: rgb(255 255 255 / 0.05);
-  border: 1px solid rgb(255 255 255 / 0.12);
-  box-shadow: 0 30px 60px -40px rgb(0 0 0 / 0.8);
+  padding: 40px 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.form-head {
+  display: grid;
+  gap: 8px;
+}
+
+.form-fields {
   display: grid;
   gap: 18px;
+}
+
+@media (max-width: 860px) {
+  .contact-form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
 }
 
 .contact .form-submit {
@@ -1359,7 +1451,7 @@ main section {
 }
 
 .contact-form .form-intro {
-  color: var(--term-dim);
+  color: var(--muted);
 }
 
 .field-row {
@@ -1382,9 +1474,9 @@ main section {
 .field input,
 .field textarea {
   font: inherit;
-  color: var(--term-ink);
-  background: rgb(0 0 0 / 0.25);
-  border: 1px solid rgb(255 255 255 / 0.2);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--ink) 32%, transparent);
   border-radius: 12px;
   padding: 13px 14px;
   width: 100%;
@@ -1398,7 +1490,7 @@ main section {
 
 .field input:focus,
 .field textarea:focus {
-  outline: 2px solid var(--term-pass);
+  outline: 2px solid var(--pass);
   outline-offset: 1px;
 }
 
@@ -1415,11 +1507,11 @@ main section {
 }
 
 .form-status.ok {
-  color: var(--term-pass);
+  color: var(--pass);
 }
 
 .form-status.err {
-  color: #ffb4a8;
+  color: var(--say-err);
 }
 
 .footer-links {
@@ -1439,7 +1531,7 @@ main section {
   }
 
   .contact-form {
-    padding: 20px;
+    padding: 28px 24px;
   }
 }
 
@@ -1491,7 +1583,7 @@ main section {
 
 @media (max-width: 640px) {
   main section {
-    padding-block: 60px;
+    padding-block: 48px;
   }
 
   .hero-section {
@@ -1561,7 +1653,7 @@ main section {
 
 /* Small additions */
 .contact-form h3 {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: 800;
 }
 
@@ -1575,10 +1667,52 @@ main section {
   margin-top: 0;
 }
 
-.contact h2 {
-  color: #fff;
-}
-
 .page-plain {
   min-height: 60vh;
+}
+
+/* Dark theme, switched on in the admin panel (Theme). Only the tokens change, so every
+   section follows. The admin panel has its own colours and is left out. */
+:root[data-theme='dark']:not(:has(.adm)) {
+  --paper: #0a0d0c;
+  --panel: #101614;
+  --ink: #e9f1ec;
+  --muted: #9aaba2;
+  --rule: #212b26;
+  --pass: #6fd39b;
+  --pass-tint: rgb(111 211 155 / 0.12);
+  --term-bg: #111c17;
+  --on-ink: #0a0d0c;
+  --tag-bg: rgb(10 13 12 / 0.82);
+  color-scheme: dark;
+}
+
+/* A soft glow behind the hero instead of a flat black page. */
+:root[data-theme='dark']:not(:has(.adm)) .hero-section {
+  background:
+    radial-gradient(60% 55% at 18% 0%, rgb(111 211 155 / 0.16), transparent 70%),
+    radial-gradient(45% 50% at 85% 5%, rgb(92 200 224 / 0.12), transparent 70%),
+    var(--surface);
+}
+
+:root[data-theme='dark']:not(:has(.adm)) .hero h1 {
+  background: linear-gradient(95deg, #f1f7f3 20%, #6fd39b 70%, #5cc8e0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+:root[data-theme='dark']:not(:has(.adm)) .portrait {
+  background: linear-gradient(160deg, #16211c, #0f1613);
+  box-shadow: 0 0 0 1px var(--rule), 0 40px 80px -40px rgb(111 211 155 / 0.25);
+}
+
+:root[data-theme='dark']:not(:has(.adm)) .brand-mark,
+:root[data-theme='dark']:not(:has(.adm)) .contact {
+  --say-grad: linear-gradient(95deg, #f6c177, #6fd39b 55%, #5cc8e0);
+  --say-err: #ffb4a8;
+}
+
+:root[data-theme='dark']:not(:has(.adm)) .term {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08);
 }

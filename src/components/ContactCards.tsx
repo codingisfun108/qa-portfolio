@@ -6,7 +6,7 @@ function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) 
   const [state, setState] = useState(label);
   return (
     <button
-      className="btn small"
+      className="clink"
       type="button"
       onClick={async () => {
         try {
@@ -66,7 +66,7 @@ export function ContactCards({ email, phoneEncoded, linkedin, github, resumeUrl 
             </p>
           </div>
           <div className="cactions">
-            <a className="btn small" href={`mailto:${email}`}>
+            <a className="clink" href={`mailto:${email}`}>
               Send email
             </a>
             <CopyButton text={email} />
@@ -83,13 +83,13 @@ export function ContactCards({ email, phoneEncoded, linkedin, github, resumeUrl 
           <div className="cactions">
             {phone ? (
               <>
-                <a className="btn small" href={`tel:${phone.replace(/[^\d+]/g, '')}`}>
+                <a className="clink" href={`tel:${phone.replace(/[^\d+]/g, '')}`}>
                   Call now
                 </a>
                 <CopyButton text={phone} />
               </>
             ) : (
-              <button className="btn small" type="button" onClick={() => setPhone(atob(phoneEncoded))}>
+              <button className="clink" type="button" onClick={() => setPhone(atob(phoneEncoded))}>
                 Show number
               </button>
             )}
@@ -104,7 +104,7 @@ export function ContactCards({ email, phoneEncoded, linkedin, github, resumeUrl 
             <p className="cvalue">{handle(linkedin, /^https?:\/\/(www\.)?linkedin\.com\//)}</p>
           </div>
           <div className="cactions">
-            <a className="btn small" href={linkedin} target="_blank" rel="noopener noreferrer">
+            <a className="clink" href={linkedin} target="_blank" rel="noopener noreferrer">
               Open profile
             </a>
           </div>
@@ -118,7 +118,7 @@ export function ContactCards({ email, phoneEncoded, linkedin, github, resumeUrl 
             <p className="cvalue">@{handle(github, /^https?:\/\/(www\.)?github\.com\//)}</p>
           </div>
           <div className="cactions">
-            <a className="btn small" href={github} target="_blank" rel="noopener noreferrer">
+            <a className="clink" href={github} target="_blank" rel="noopener noreferrer">
               Open GitHub
             </a>
           </div>
@@ -132,10 +132,10 @@ export function ContactCards({ email, phoneEncoded, linkedin, github, resumeUrl 
             <p className="cvalue">Full work history, PDF</p>
           </div>
           <div className="cactions">
-            <a className="btn small" href={resumeUrl} download>
+            <a className="clink" href={resumeUrl} download>
               Download PDF
             </a>
-            <a className="btn small" href={resumeUrl} target="_blank" rel="noopener noreferrer">
+            <a className="clink" href={resumeUrl} target="_blank" rel="noopener noreferrer">
               View online
             </a>
           </div>

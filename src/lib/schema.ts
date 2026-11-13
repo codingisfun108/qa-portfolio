@@ -75,6 +75,8 @@ export const contentSchema = z.object({
     seoTitle: text(80),
     seoDescription: text(200),
     siteUrl: url,
+    // Colour theme of the public site. The admin panel always stays light.
+    theme: z.enum(['light', 'dark']).default('light'),
   }),
 
   hero: z.object({

@@ -22,6 +22,7 @@ Personal portfolio with a password-protected admin panel. Everything on the publ
 - Upload photo, resume PDF and recognition images
 - Blog posts in Markdown with drafts and scheduling (a published post with a future date appears by itself on that date)
 - Inbox for contact-form messages, with optional email alerts
+- Light or dark theme for the public site
 - Backup download and restore, reset to starting content, sign out on all devices
 - Unsaved-changes warning and Ctrl/Cmd+S to save
 

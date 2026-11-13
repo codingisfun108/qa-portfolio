@@ -106,7 +106,7 @@ function TestEvidence({ repoUrl }: { repoUrl: string }) {
 
 function Signoff({ s, content }: Props) {
   return (
-    <section id={s.id} className="run-section" aria-labelledby={`${s.id}-title`}>
+    <section id={s.id} aria-labelledby={`${s.id}-title`}>
       <div className="wrap">
         <Head s={s} />
         <SignoffRun signoff={content.signoff} />
@@ -168,7 +168,7 @@ function Projects({ s, content }: Props) {
 function Ai({ s, content }: Props) {
   const { ai } = content;
   return (
-    <section id={s.id} className="band" aria-labelledby={`${s.id}-title`}>
+    <section id={s.id} aria-labelledby={`${s.id}-title`}>
       <div className="wrap">
         <Head s={s} />
         {ai.intro && <p className="ai-intro">{ai.intro}</p>}
@@ -205,7 +205,7 @@ function Ai({ s, content }: Props) {
 function Impact({ s, content }: Props) {
   if (!content.impact.length) return null;
   return (
-    <section id={s.id} className="band" aria-labelledby={`${s.id}-title`}>
+    <section id={s.id} aria-labelledby={`${s.id}-title`}>
       <div className="wrap">
         <Head s={s} />
         <dl className="impact">
@@ -260,7 +260,7 @@ function Recognition({ s, content }: Props) {
   const items = content.recognition.filter((r) => r.visible);
   if (!items.length) return null;
   return (
-    <section id={s.id} className="band" aria-labelledby={`${s.id}-title`}>
+    <section id={s.id} aria-labelledby={`${s.id}-title`}>
       <div className="wrap">
         <Head s={s} />
         <div className="recognition">
@@ -376,7 +376,7 @@ function Blog({ s, content }: Props) {
   const posts = content.posts.filter(isLive).sort((a, b) => b.date.localeCompare(a.date));
   if (!posts.length) return null;
   return (
-    <section id={s.id} className="band" aria-labelledby={`${s.id}-title`}>
+    <section id={s.id} aria-labelledby={`${s.id}-title`}>
       <div className="wrap">
         <Head s={s} />
         <ul className="posts">
@@ -435,13 +435,44 @@ function Now({ s, content }: Props) {
   );
 }
 
+// Decorative speech bubbles for the contact card, drawn inline so there is no image to load.
+function ChatArt() {
+  return (
+    <div className="chat-art" aria-hidden="true">
+      <svg viewBox="0 0 320 280" role="presentation">
+        <defs>
+          <radialGradient id="bubble-back" cx="38%" cy="28%" r="80%">
+            <stop offset="0" stopColor="#ffe6b8" />
+            <stop offset="0.5" stopColor="#f2a65a" />
+            <stop offset="1" stopColor="#c9553f" />
+          </radialGradient>
+          <radialGradient id="bubble-front" cx="34%" cy="26%" r="85%">
+            <stop offset="0" stopColor="#c9f8de" />
+            <stop offset="0.45" stopColor="#3fc48a" />
+            <stop offset="1" stopColor="#0b6b5c" />
+          </radialGradient>
+        </defs>
+        <g className="bubble back">
+          <path d="M252 158q12 24 34 28-20-8-14-38z" fill="#c9553f" />
+          <ellipse cx="212" cy="104" rx="86" ry="68" fill="url(#bubble-back)" />
+        </g>
+        <g className="bubble front">
+          <path d="M92 232q-8 28-34 38 28-2 56-28z" fill="#0b6b5c" />
+          <ellipse cx="132" cy="166" rx="106" ry="82" fill="url(#bubble-front)" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 function Contact({ s, content }: Props) {
   const { site } = content;
   const phoneEncoded = site.showPhone && site.phone ? Buffer.from(site.phone).toString('base64') : '';
   return (
     <section id={s.id} className="contact" aria-labelledby={`${s.id}-title`}>
-      <div className={`wrap contact-grid${content.contact.formEnabled ? ' split' : ''}`}>
-        <div className="contact-info">
+      <div className="wrap contact-stack">
+        <div className="say-card">
+          <div className="contact-info">
           <Head s={s} dark />
           {(site.location || (site.showAvailability && site.availability)) && (
             <p className="contact-meta">
@@ -455,6 +486,8 @@ function Contact({ s, content }: Props) {
             </p>
           )}
           <ContactCards email={site.email} phoneEncoded={phoneEncoded} linkedin={site.linkedin} github={site.github} resumeUrl={site.resumeUrl} />
+          </div>
+          <ChatArt />
         </div>
         {content.contact.formEnabled && <ContactForm intro={content.contact.formIntro} />}
       </div>

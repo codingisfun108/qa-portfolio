@@ -29,6 +29,7 @@ export const seed: Content = {
     seoDescription:
       'QA Lead with 9+ years on SaaS web and mobile products. Test strategy, release governance, Playwright automation and AI-assisted QA.',
     siteUrl: '',
+    theme: 'light',
   },
 
   hero: {

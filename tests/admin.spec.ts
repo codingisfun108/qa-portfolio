@@ -268,6 +268,29 @@ test.describe('Editing content', () => {
     await resetContent(page);
   });
 
+  test('the Theme switch turns the public site dark and it stays readable', async ({ page }) => {
+    await openTab(page, 'Theme');
+    await page.getByLabel('Dark theme').check();
+    await saveAndWait(page);
+
+    const site = await page.context().newPage();
+    await site.goto('/');
+    await expect(site.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(site.locator('body')).toHaveCSS('background-color', 'rgb(10, 13, 12)');
+    await expect(site.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0a0d0c');
+    const axe = await new AxeBuilder({ page: site }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+    expect(axe.violations.filter((v) => ['serious', 'critical'].includes(v.impact ?? '')).map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
+    await site.close();
+
+    // The admin panel keeps its own light colours.
+    await expect(page.locator('body')).not.toHaveCSS('background-color', 'rgb(10, 13, 12)');
+    await resetContent(page);
+    const light = await page.context().newPage();
+    await light.goto('/');
+    await expect(light.locator('html')).toHaveAttribute('data-theme', 'light');
+    await light.close();
+  });
+
   test('invalid content is refused with a field-level message', async ({ page }) => {
     await openTab(page, 'Profile and contact');
     await page.getByLabel('LinkedIn URL').fill('linkedin.com/in/no-scheme');
