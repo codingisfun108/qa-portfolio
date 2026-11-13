@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getContent } from '@/lib/store';
+import { isLive } from '@/lib/visibility';
 import { renderMarkdown } from '@/lib/markdown';
 import { formatDate } from '@/components/Sections';
 import { SiteFooter, SiteHeader } from '@/components/SiteChrome';
@@ -13,7 +14,7 @@ type Params = { params: Promise<{ slug: string }> };
 async function findPost(slug: string) {
   const content = await getContent();
   const blogVisible = content.sections.some((s) => s.id === 'blog' && s.visible);
-  const post = content.posts.find((p) => p.slug === slug && p.published);
+  const post = content.posts.find((p) => p.slug === slug && isLive(p));
   return { content, post: blogVisible ? post : undefined };
 }
 

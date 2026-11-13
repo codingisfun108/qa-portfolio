@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getContent } from '@/lib/store';
+import { isLive } from '@/lib/visibility';
 import { formatDate } from '@/components/Sections';
 import { SiteFooter, SiteHeader } from '@/components/SiteChrome';
 
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function BlogIndex() {
   const content = await getContent();
   const section = content.sections.find((s) => s.id === 'blog');
-  const posts = content.posts.filter((p) => p.published).sort((a, b) => b.date.localeCompare(a.date));
+  const posts = content.posts.filter(isLive).sort((a, b) => b.date.localeCompare(a.date));
   if (!section?.visible || !posts.length) notFound();
 
   return (

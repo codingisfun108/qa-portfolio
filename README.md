@@ -2,14 +2,15 @@
 
 Personal portfolio with a password-protected admin panel. Everything on the public site (text, photo, resume, projects, jobs, section order and visibility, blog posts) is edited at `/admin` and goes live on save. Built with Next.js, hosted free on Vercel, and tested with Playwright on every push.
 
-![Playwright tests](https://github.com/<you>/qa-portfolio/actions/workflows/playwright.yml/badge.svg)
+![Playwright tests](https://github.com/codingisfun108/qa-portfolio/actions/workflows/playwright.yml/badge.svg)
 
 ## What's included
 
 **Public site**
 - Hero with availability badge, photo, stats and resume download
 - Animated release sign-off panel (checks tick off as you scroll)
-- Projects, impact numbers, experience timeline, toolkit, recognition, certifications, writing (blog), now and education
+- Projects with optional case-study pages (`/projects/<id>`), a featured AI in QA section, impact numbers with how each was measured, experience timeline, toolkit with "How I run QA" and downloadable templates, recognition, certifications, writing (blog), now and education
+- A line under the sign-off panel linking to this repo's real test runs (appears once the repo URL is set)
 - Contact cards (copy buttons, phone shown only on request) and a contact form with spam protection
 - SEO: page metadata, generated link-preview image, `sitemap.xml`, `robots.txt`, JSON-LD Person data
 - Vercel Web Analytics, security headers, accessible (axe WCAG 2.2 AA checked in CI)
@@ -19,7 +20,7 @@ Personal portfolio with a password-protected admin panel. Everything on the publ
 - Editors for every section; add, remove, reorder, show and hide any item
 - Turn whole sections on or off, rename them, reorder them, choose what appears in the menu
 - Upload photo, resume PDF and recognition images
-- Blog posts in Markdown with drafts
+- Blog posts in Markdown with drafts and scheduling (a published post with a future date appears by itself on that date)
 - Inbox for contact-form messages, with optional email alerts
 - Backup download and restore, reset to starting content, sign out on all devices
 - Unsaved-changes warning and Ctrl/Cmd+S to save

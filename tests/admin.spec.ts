@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import fs from 'node:fs';
 import path from 'node:path';
 import { TEST_ADMIN } from '../playwright.config';
@@ -130,6 +131,89 @@ test.describe('Editing content', () => {
     await resetContent(page);
   });
 
+  test('writing a case study gives the project its own page', async ({ page }) => {
+    const project = seed.projects.find((p) => p.visible)!;
+    await openTab(page, 'Projects');
+    await page.locator('.adm-main').getByRole('button', { name: new RegExp(`^${project.title}`) }).click();
+    const item = page.locator('.adm-item.open');
+    await item.getByRole('button', { name: 'Insert case study outline' }).click();
+    await expect(item.getByLabel('Case study (Markdown, optional)')).toHaveValue(/## Test strategy/);
+    await item.getByLabel('Case study (Markdown, optional)').fill('## One hard call\n\nHeld the release for a payment defect. <script>alert(1)</script>');
+    await saveAndWait(page);
+
+    const site = await page.context().newPage();
+    await site.goto('/');
+    await site.getByRole('link', { name: `Read the ${project.title} case study` }).click();
+    await expect(site).toHaveURL(new RegExp(`/projects/${project.id}$`));
+    await expect(site.getByRole('heading', { level: 1 })).toHaveText(project.title);
+    await expect(site.getByRole('heading', { level: 2, name: 'One hard call' })).toBeVisible();
+    // Raw HTML in a case study is shown as text, never run.
+    await expect(site.getByTestId('case-study-page').locator('script')).toHaveCount(0);
+    await expect(site.getByTestId('case-study-page')).toContainText('<script>alert(1)</script>');
+    const axe = await new AxeBuilder({ page: site }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+    expect(axe.violations.filter((v) => ['serious', 'critical'].includes(v.impact ?? '')).map((v) => v.id)).toEqual([]);
+    expect(await (await site.request.get('/sitemap.xml')).text()).toContain(`/projects/${project.id}`);
+
+    // Hiding the project takes its page away too.
+    await item.getByLabel('Show on site').uncheck();
+    await saveAndWait(page);
+    expect((await site.goto(`/projects/${project.id}`))?.status()).toBe(404);
+    await site.close();
+    await resetContent(page);
+  });
+
+  test('measurement notes, practice details and the AI section edit the live site', async ({ page }) => {
+    const c = structuredClone(seed);
+    c.impact[0].note = 'Sev-1 and Sev-2 escapes per release, 2022 vs 2024';
+    c.practices[0].detail = 'No open Sev-1 at sign-off.';
+    c.artifacts = [{ title: 'Release sign-off report', description: 'One page.', url: '' }];
+    c.ai.result = 'Test plan drafting went from hours to minutes.';
+    c.ai.samples = [{ title: 'Bug report sample', body: 'Summary: <b>Seat map</b> fails to load' }];
+    c.site.repoUrl = 'https://github.com/example/qa-portfolio';
+    expect((await page.request.put('/api/admin/content', { data: c })).status()).toBe(200);
+
+    const site = await page.context().newPage();
+    await site.goto('/');
+    await expect(site.locator('#impact .note')).toHaveText(c.impact[0].note);
+    await expect(site.locator('#toolkit')).toContainText('No open Sev-1 at sign-off.');
+    await expect(site.locator('#toolkit')).toContainText('Release sign-off report');
+    await expect(site.locator('#ai .ai-result')).toHaveText(c.ai.result);
+    await site.locator('#ai summary').click();
+    await expect(site.locator('#ai pre')).toHaveText('Summary: <b>Seat map</b> fails to load');
+    const evidence = site.getByTestId('test-evidence');
+    await expect(evidence.getByRole('link', { name: 'See the latest runs' })).toHaveAttribute('href', 'https://github.com/example/qa-portfolio/actions');
+    await expect(evidence.getByRole('link', { name: 'read the tests' })).toHaveAttribute('href', 'https://github.com/example/qa-portfolio/tree/main/tests');
+    await site.close();
+    await resetContent(page);
+  });
+
+  test('content saved before the new fields existed still loads', async ({ page }) => {
+    // The shape an older site has in storage: no AI section, plain-text practices, and
+    // projects and impact numbers without the newer fields.
+    const { ai: _ai, artifacts: _artifacts, ...rest } = structuredClone(seed);
+    const old = {
+      ...rest,
+      hero: { ...rest.hero, headline: 'Saved before the upgrade' },
+      sections: rest.sections.filter((s) => s.id !== 'ai'),
+      practices: ['Risk-based test planning', 'Root cause analysis'],
+      projects: rest.projects.map(({ employer: _e, period: _p, caseStudy: _c, ...p }) => p),
+      impact: rest.impact.map(({ note: _n, ...m }) => m),
+    };
+    fs.writeFileSync(path.join('.data-test', 'content.json'), JSON.stringify(old));
+
+    const loaded = await (await page.request.get('/api/admin/content')).json();
+    expect(loaded.hero.headline).toBe('Saved before the upgrade'); // not replaced by the starting content
+    expect(loaded.practices).toEqual([
+      { title: 'Risk-based test planning', detail: '' },
+      { title: 'Root cause analysis', detail: '' },
+    ]);
+    expect(loaded.projects[0].caseStudy).toBe('');
+    expect(loaded.impact[0].note).toBe('');
+    expect(loaded.ai.steps.length).toBe(seed.ai.steps.length);
+    expect(loaded.sections.map((s: { id: string }) => s.id)).toContain('ai');
+    await resetContent(page);
+  });
+
   test('publishing a post makes it reachable', async ({ page }) => {
     const draft = seed.posts[0];
     await openTab(page, 'Writing');
@@ -146,6 +230,40 @@ test.describe('Editing content', () => {
     await expect(site.getByRole('heading', { level: 1 })).toHaveText(draft.title);
     await site.goto('/');
     await expect(site.locator('section#blog')).toContainText(draft.title);
+    await site.close();
+    await resetContent(page);
+  });
+
+  test('a published post with a future date stays hidden until that date', async ({ page }) => {
+    const day = (offset: number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(Date.now() + offset * 86_400_000);
+    const withPost = (date: string) => {
+      const c = structuredClone(seed);
+      c.posts[0] = { ...c.posts[0], published: true, date };
+      c.sections = c.sections.map((s) => (s.id === 'blog' ? { ...s, visible: true, inNav: true } : s));
+      return c;
+    };
+    const slug = seed.posts[0].slug;
+
+    // Dated tomorrow: saved as published, but visitors can't see it anywhere yet.
+    expect((await page.request.put('/api/admin/content', { data: withPost(day(1)) })).status()).toBe(200);
+    const site = await page.context().newPage();
+    expect((await site.goto(`/blog/${slug}`))?.status()).toBe(404);
+    await site.goto('/');
+    await expect(site.locator('section#blog')).toHaveCount(0);
+    await expect(site.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Writing' })).toHaveCount(0);
+    expect(await (await site.request.get('/sitemap.xml')).text()).not.toContain(`/blog/${slug}`);
+
+    // The admin panel labels it as scheduled.
+    await page.reload();
+    await waitReady(page);
+    await openTab(page, 'Writing');
+    await expect(page.locator('.adm-main')).toContainText(`Scheduled for ${day(1)}`);
+
+    // Once the date is today, the same post is live.
+    expect((await page.request.put('/api/admin/content', { data: withPost(day(0)) })).status()).toBe(200);
+    expect((await site.goto(`/blog/${slug}`))?.status()).toBe(200);
+    await site.goto('/');
+    await expect(site.locator('section#blog')).toContainText(seed.posts[0].title);
     await site.close();
     await resetContent(page);
   });
@@ -253,8 +371,10 @@ test.describe('Empty and switched-off content', () => {
     c.experience = c.experience.map((j) => ({ ...j, visible: false }));
     c.signoff.checks = [];
     c.impact = [];
+    c.ai = { intro: '', steps: [], samples: [], result: '' };
     c.toolkit = [];
     c.practices = [];
+    c.artifacts = [];
     c.now = [];
     c.education = [];
     c.hero.stats = [];
@@ -269,7 +389,7 @@ test.describe('Empty and switched-off content', () => {
     site.on('pageerror', (e) => errors.push(e.message));
     await site.goto('/');
     await expect(site.getByRole('heading', { level: 1 })).toHaveText(seed.hero.headline);
-    for (const id of ['signoff', 'projects', 'impact', 'experience', 'recognition', 'toolkit', 'certifications', 'blog', 'now', 'contact']) {
+    for (const id of ['signoff', 'projects', 'ai', 'impact', 'experience', 'recognition', 'toolkit', 'certifications', 'blog', 'now', 'contact']) {
       await expect(site.locator(`section#${id}`), id).toHaveCount(0);
     }
     await expect(site.getByRole('navigation', { name: 'Sections' })).toHaveCount(0);
